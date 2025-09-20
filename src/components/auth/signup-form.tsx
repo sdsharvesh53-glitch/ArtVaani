@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -8,8 +9,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  isSignInWithEmailLink,
+  sendSignInLinkToEmail,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, Loader2 } from 'lucide-react';
 
@@ -50,16 +53,26 @@ export function SignupForm() {
 
   const createInitialUserProfile = async (
     uid: string,
-    email: string | null
+    email: string | null,
+    name: string | null
   ) => {
     const userDocRef = doc(db, 'users', uid);
-    await setDoc(userDocRef, {
-      uid,
-      email,
-      role: 'buyer',
-      profileComplete: false,
-      createdAt: new Date(),
-    });
+    const userDoc = await getDoc(userDocRef);
+
+    // Create profile only if it doesn't exist
+    if (!userDoc.exists()) {
+      await setDoc(userDocRef, {
+        uid,
+        email,
+        name: name || '',
+        role: 'buyer',
+        profileComplete: false,
+        verified: false,
+        createdAt: new Date(),
+      });
+      return true; // Indicates new user
+    }
+    return false; // Indicates existing user
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -72,7 +85,8 @@ export function SignupForm() {
       );
       await createInitialUserProfile(
         userCredential.user.uid,
-        userCredential.user.email
+        userCredential.user.email,
+        userCredential.user.displayName
       );
       router.push('/profile-setup');
       toast({
@@ -84,7 +98,7 @@ export function SignupForm() {
         title: 'Sign Up Failed',
         description:
           error.code === 'auth/email-already-in-use'
-            ? 'This email is already registered.'
+            ? 'This email is already registered. Please log in.'
             : 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
@@ -98,12 +112,22 @@ export function SignupForm() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      await createInitialUserProfile(result.user.uid, result.user.email);
-      router.push('/profile-setup');
-      toast({
-        title: 'Account Created',
-        description: "Let's set up your profile.",
-      });
+      const isNewUser = await createInitialUserProfile(result.user.uid, result.user.email, result.user.displayName);
+      
+      if (isNewUser) {
+        router.push('/profile-setup');
+        toast({
+          title: 'Account Created',
+          description: "Welcome! Let's set up your profile.",
+        });
+      } else {
+        router.push('/');
+        toast({
+          title: 'Login Successful',
+          description: 'Welcome back!',
+        });
+      }
+
     } catch (error) {
       toast({
         title: 'Google Sign-In Failed',
@@ -114,6 +138,16 @@ export function SignupForm() {
       setIsLoading(false);
     }
   }
+
+  // A full implementation for phone OTP is complex and would require a separate page/component flow
+  // This is a placeholder to show the button as disabled.
+  const handlePhoneSignIn = async () => {
+    toast({
+        title: "Coming Soon!",
+        description: "Phone number authentication is not yet available."
+    })
+  }
+
 
   return (
     <div className="space-y-4">
@@ -167,7 +201,7 @@ export function SignupForm() {
           <Icons.google className="mr-2 h-5 w-5" />
           Continue with Google
         </Button>
-        <Button variant="outline" className="w-full rounded-full" disabled>
+        <Button variant="outline" className="w-full rounded-full" onClick={handlePhoneSignIn} disabled>
           <Phone className="mr-2 h-4 w-4" />
           Continue with Phone (Coming Soon)
         </Button>
