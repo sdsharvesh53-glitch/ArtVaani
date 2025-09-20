@@ -1,8 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 
+import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,38 +25,70 @@ import {
 import { ChevronDown, ShoppingCart } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// This would be fetched from Firestore in a real app
-const products = [
-  { id: '1', name: 'Madhubani Painted Vase', price: '₹1,200', image: 'https://picsum.photos/seed/madhubani-vase/400/400', hint: 'painted vase' },
-  { id: '2', name: 'Handwoven Pashmina Shawl', price: '₹8,500', image: 'https://picsum.photos/seed/pashmina-shawl/400/400', hint: 'woven shawl' },
-  { id: '3', name: 'Terracotta Warrior Statue', price: '₹3,400', image: 'https://picsum.photos/seed/terracotta-statue/400/400', hint: 'clay statue' },
-  { id: '4', name: 'Bidriware Silver Coasters', price: '₹2,100', image: 'https://picsum.photos/seed/bidriware-coasters/400/400', hint: 'metal coasters' },
-  { id: '5', name: 'Kalamkari Wall Hanging', price: '₹4,800', image: 'https://picsum.photos/seed/kalamkari-hanging/400/400', hint: 'fabric wall art' },
-  { id: '6', name: 'Blue Pottery Mug Set', price: '₹1,900', image: 'https://picsum.photos/seed/pottery-mugs/400/400', hint: 'pottery mugs' },
-  { id: '7', name: 'Wooden Jigsaw Puzzle Box', price: '₹2,500', image: 'https://picsum.photos/seed/puzzle-box/400/400', hint: 'wooden box' },
-  { id: '8', name: 'Leather Puppets (Tholu Bommalata)', price: '₹3,200', image: 'https://picsum.photos/seed/leather-puppets/400/400', hint: 'leather puppets' },
-];
+export interface Product {
+  id: string;
+  title: string;
+  aiStory: string;
+  aiPrice: number;
+  images: string[];
+  aiTags: string[];
+  artisanId: string;
+  sellerDetails: {
+    name: string;
+    city: string;
+  };
+  createdAt: any;
+}
 
 export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const { toast } = useToast();
 
-  const handleAddToCart = (product: typeof products[0]) => {
+  useEffect(() => {
+    const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const productsData: Product[] = [];
+        querySnapshot.forEach((doc) => {
+          productsData.push({ id: doc.id, ...doc.data() } as Product);
+        });
+        setProducts(productsData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching products:', error);
+        setLoading(false);
+        toast({
+          title: 'Error',
+          description: 'Could not fetch products.',
+          variant: 'destructive',
+        });
+      }
+    );
+
+    return () => unsubscribe();
+  }, [toast]);
+
+  const handleAddToCart = (product: Product) => {
     addToCart({
       id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
+      name: product.title,
+      price: `₹${product.aiPrice.toFixed(2)}`,
+      image: product.images[0],
       quantity: 1,
-      hint: product.hint
+      hint: product.aiTags[0] || 'craft',
     });
     toast({
       title: 'Added to cart',
-      description: `${product.name} has been added to your cart.`,
+      description: `${product.title} has been added to your cart.`,
     });
   };
-  
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="text-center">
@@ -102,41 +137,61 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {products.map((product) => (
-          <Card
-            key={product.id}
-            className="flex flex-col overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 hover:shadow-xl"
-          >
-            <CardHeader className="p-0">
-               <Link href={`/products/${product.id}`}>
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  width={400}
-                  height={400}
-                  className="h-64 w-full object-cover transition-transform duration-300 hover:scale-105"
-                  data-ai-hint={product.hint}
-                />
-              </Link>
-            </CardHeader>
-            <CardContent className="flex-grow p-4">
-              <CardTitle className="truncate text-lg">{product.name}</CardTitle>
-              <CardDescription className="mt-2 text-base font-semibold text-primary">
-                {product.price}
-              </CardDescription>
-            </CardContent>
-            <CardFooter className="flex gap-2 p-4 pt-0">
-                 <Button asChild className="w-full rounded-full" variant="outline">
-                <Link href={`/products/${product.id}`}>View</Link>
-              </Button>
-              <Button onClick={() => handleAddToCart(product)} className="w-full rounded-full">
-                <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="flex flex-col overflow-hidden rounded-2xl shadow-md">
+              <CardHeader className="p-0">
+                <Skeleton className="h-64 w-full" />
+              </CardHeader>
+              <CardContent className="flex-grow p-4">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="mt-2 h-5 w-1/4" />
+              </CardContent>
+              <CardFooter className="flex gap-2 p-4 pt-0">
+                <Skeleton className="h-10 w-full rounded-full" />
+                <Skeleton className="h-10 w-full rounded-full" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {products.map((product) => (
+            <Card
+              key={product.id}
+              className="flex flex-col overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 hover:shadow-xl"
+            >
+              <CardHeader className="p-0">
+                <Link href={`/products/${product.id}`}>
+                  <Image
+                    src={product.images[0] || 'https://placehold.co/400x400'}
+                    alt={product.title}
+                    width={400}
+                    height={400}
+                    className="h-64 w-full object-cover transition-transform duration-300 hover:scale-105"
+                    data-ai-hint={product.aiTags[0]}
+                  />
+                </Link>
+              </CardHeader>
+              <CardContent className="flex-grow p-4">
+                <CardTitle className="truncate text-lg">{product.title}</CardTitle>
+                <CardDescription className="mt-2 text-base font-semibold text-primary">
+                  ₹{product.aiPrice.toFixed(2)}
+                </CardDescription>
+              </CardContent>
+              <CardFooter className="flex gap-2 p-4 pt-0">
+                <Button asChild className="w-full rounded-full" variant="outline">
+                  <Link href={`/products/${product.id}`}>View</Link>
+                </Button>
+                <Button onClick={() => handleAddToCart(product)} className="w-full rounded-full">
+                  <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -141,14 +141,16 @@ export default function Home() {
                   className="overflow-hidden rounded-2xl shadow-md transition-shadow hover:shadow-xl"
                 >
                   <CardHeader className="p-0">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      width={400}
-                      height={400}
-                      className="h-64 w-full object-cover"
-                      data-ai-hint={product.hint}
-                    />
+                     <Link href={`/products`}>
+                        <Image
+                          src={product.image}
+                          alt={product.name}
+                          width={400}
+                          height={400}
+                          className="h-64 w-full object-cover"
+                          data-ai-hint={product.hint}
+                        />
+                     </Link>
                   </CardHeader>
                   <CardContent className="p-4">
                     <CardTitle className="text-lg">{product.name}</CardTitle>
@@ -159,7 +161,7 @@ export default function Home() {
                       asChild
                       className="mt-4 w-full rounded-full"
                     >
-                      <Link href={`/products/${product.id}`}>View Details</Link>
+                      <Link href={`/products`}>View Details</Link>
                     </Button>
                   </CardContent>
                 </Card>
