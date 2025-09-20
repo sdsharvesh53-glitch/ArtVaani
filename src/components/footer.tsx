@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex flex-col gap-4">
           <Link href="/" className="flex items-center space-x-2">
             <Icons.logo className="h-8 w-8 text-primary" />
-            <span className="font-headline text-2xl font-bold">Craftopia</span>
+            <span className="font-headline text-2xl font-bold">ArtVaani</span>
           </Link>
           <p className="text-sm text-foreground/70">
             Weaving stories, one craft at a time.
@@ -105,7 +105,7 @@ export function Footer() {
       <div className="border-t">
         <div className="container mx-auto flex flex-col items-center justify-between gap-2 px-4 py-4 sm:flex-row">
           <p className="text-sm text-foreground/60">
-            &copy; {new Date().getFullYear()} Craftopia. All rights reserved.
+            &copy; {new Date().getFullYear()} ArtVaani. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             {/* Add social icons here */}

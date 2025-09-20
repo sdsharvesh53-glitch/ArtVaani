@@ -5,7 +5,7 @@ import { AppProviders } from '@/providers/app-provider';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Craftopia',
+  title: 'ArtVaani',
   description: 'Discover authentic Indian crafts and the stories behind them.',
 };
 

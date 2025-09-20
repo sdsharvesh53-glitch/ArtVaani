@@ -80,7 +80,7 @@ export default function Home() {
         <section className="relative w-full py-20 md:py-32 lg:py-40">
           <div className="container mx-auto px-4 text-center">
             <h1 className="font-headline text-5xl font-bold tracking-tighter text-primary sm:text-6xl md:text-7xl lg:text-8xl">
-              Craftopia
+              ArtVaani
             </h1>
             <p className="mx-auto mt-4 max-w-[700px] text-lg text-foreground/80 md:text-xl">
               Weaving stories, one craft at a time. Discover authentic Indian
@@ -180,7 +180,7 @@ export default function Home() {
                 Empowering Artisans
               </h2>
               <p className="text-lg text-foreground/80">
-                Are you an artisan? Join Craftopia to showcase your talent to a
+                Are you an artisan? Join ArtVaani to showcase your talent to a
                 global audience and grow your business.
               </p>
               <ul className="space-y-3">

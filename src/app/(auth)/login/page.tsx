@@ -17,7 +17,7 @@ export default function LoginPage() {
             Welcome Back
           </CardTitle>
           <CardDescription>
-            Log in to your Craftopia account to continue.
+            Log in to your ArtVaani account to continue.
           </CardDescription>
         </CardHeader>
         <CardContent>

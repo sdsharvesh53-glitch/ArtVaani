@@ -36,7 +36,7 @@ export function Header() {
         <Link href="/" className="mr-6 flex items-center space-x-2">
           <Icons.logo className="h-8 w-8 text-primary" />
           <span className="hidden font-headline text-2xl font-bold sm:inline-block">
-            Craftopia
+            ArtVaani
           </span>
         </Link>
         <nav className="hidden flex-1 items-center gap-6 text-sm font-medium md:flex">

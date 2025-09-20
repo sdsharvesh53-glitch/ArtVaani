@@ -17,7 +17,7 @@ export default function SignupPage() {
             Create an Account
           </CardTitle>
           <CardDescription>
-            Join Craftopia to discover and sell unique crafts.
+            Join ArtVaani to discover and sell unique crafts.
           </CardDescription>
         </CardHeader>
         <CardContent>
