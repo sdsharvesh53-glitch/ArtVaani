@@ -70,7 +70,7 @@ export default function DashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="font-headline text-2xl text-primary">Identity Verification</CardTitle>
               <ShieldCheck className="h-6 w-6 text-accent" />
-            </CardHeader>
+            </Header>
             <CardContent>
               <p className="text-sm text-foreground/80">
                 Verify your identity to earn a trusted badge on your profile.
