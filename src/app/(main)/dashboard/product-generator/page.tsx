@@ -214,7 +214,7 @@ export default function ProductGeneratorPage() {
         // 2. Prepare data for Firestore
         const tags = Array.isArray(editableListing.hashtags) 
             ? editableListing.hashtags 
-            : (editableListing.hashtags as unknown as string).split(',').map(t => t.trim());
+            : (editableListing.hashtags as unknown as string).split(',').map(t => t.trim()).filter(t => t);
 
         const productData = {
             artisanId: user.uid,
