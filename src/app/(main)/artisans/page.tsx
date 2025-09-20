@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { Loader2, Sparkles } from 'lucide-react';
 
 import { db } from '@/lib/firebase';
@@ -60,14 +60,14 @@ export default function ForArtisansPage() {
     try {
       // Update user document in Firestore
       const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, {
+      await setDoc(userDocRef, {
         role: 'artisan',
         craft: values.craftName,
         experience: values.experience,
         bio: values.bio,
         sampleImages: [], // Set empty array as image upload is removed
         verificationStatus: 'pending',
-      });
+      }, { merge: true });
       
       toast({
         title: 'Application Submitted!',
