@@ -63,10 +63,10 @@ export default function ForArtisansPage() {
       // 1. Upload sample photo to Firebase Storage
       const photoRef = ref(
         storage,
-        `artisan-samples/${user.uid}/${values.samplePhoto.name}`
+        `artisan-profiles/${user.uid}/${values.samplePhoto.name}`
       );
       const snapshot = await uploadBytes(photoRef, values.samplePhoto);
-      const samplePhotoUrl = await getDownloadURL(snapshot.ref);
+      const photoUrl = await getDownloadURL(snapshot.ref);
 
       // 2. Update user document in Firestore
       const userDocRef = doc(db, 'users', user.uid);
@@ -75,7 +75,7 @@ export default function ForArtisansPage() {
         craft: values.craftName,
         experience: values.experience,
         about: values.about,
-        samplePhotoUrl,
+        profileImage: photoUrl,
       });
       
       toast({
@@ -207,7 +207,7 @@ export default function ForArtisansPage() {
                   name="samplePhoto"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Sample Photo</FormLabel>
+                      <FormLabel>Profile Photo</FormLabel>
                       <FormControl>
                          <Input 
                            type="file" 

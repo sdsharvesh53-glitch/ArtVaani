@@ -8,6 +8,7 @@ import { useRouter, usePathname } from 'next/navigation';
 
 import { auth, db } from '@/lib/firebase';
 import { AuthContext } from '@/contexts/auth-context';
+import { CartItem } from '@/contexts/cart-context';
 
 // Expanded user profile type
 export interface UserProfile {
@@ -22,7 +23,9 @@ export interface UserProfile {
   craft?: string;
   experience?: number;
   about?: string;
-  samplePhotoUrl?: string;
+  profileImage?: string;
+  cart?: CartItem[];
+  purchasedOrders?: string[]; // Array of purchaseIds
   createdAt: any; // Firestore timestamp
 }
 

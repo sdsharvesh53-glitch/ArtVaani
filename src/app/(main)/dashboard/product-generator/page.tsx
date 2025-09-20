@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Loader2, Sparkles } from 'lucide-react';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -37,10 +37,10 @@ export default function ProductGeneratorPage() {
   const { toast } = useToast();
 
   const handleGenerate = async () => {
-    if (!userProfile?.craft || !userProfile.about || !userProfile.samplePhotoUrl) {
+    if (!userProfile?.craft || !userProfile.about || !userProfile.profileImage) {
       toast({
         title: 'Profile Incomplete',
-        description: 'Please ensure your craft name, about section, and sample photo are set in your artisan profile.',
+        description: 'Please ensure your craft name, about section, and profile image are set in your artisan profile.',
         variant: 'destructive',
       });
       return;
@@ -60,7 +60,7 @@ export default function ProductGeneratorPage() {
       }));
       
     try {
-        const craftImage = await toDataURL(userProfile.samplePhotoUrl) as string;
+        const craftImage = await toDataURL(userProfile.profileImage) as string;
         const result = await generateProductListing({
           craftName: userProfile.craft,
           artisanStory: userProfile.about,
@@ -80,7 +80,7 @@ export default function ProductGeneratorPage() {
   };
 
   const handleSave = async () => {
-    if (!generatedListing || !user) {
+    if (!generatedListing || !user || !userProfile) {
         return;
     }
     setIsSaving(true);
@@ -88,10 +88,16 @@ export default function ProductGeneratorPage() {
         await addDoc(collection(db, "products"), {
             title: generatedListing.productTitle,
             description: generatedListing.productDescription,
-            price: `₹${generatedListing.suggestedPrice.toFixed(2)}`,
-            imageUrl: userProfile?.samplePhotoUrl,
+            price: generatedListing.suggestedPrice,
+            hashtags: [], // The AI doesn't generate hashtags yet
+            imageUrl: userProfile.profileImage,
             artisanId: user.uid,
-            createdAt: new Date(),
+            reviews: [],
+            sellerDetails: {
+              name: userProfile.name,
+              city: userProfile.city,
+            },
+            createdAt: serverTimestamp(),
         });
         toast({
             title: "Product Saved!",
@@ -159,8 +165,8 @@ export default function ProductGeneratorPage() {
                             <CardTitle className="text-3xl text-primary">{generatedListing.productTitle}</CardTitle>
                             <p className="text-2xl font-semibold text-accent">₹{generatedListing.suggestedPrice.toFixed(2)}</p>
                         </div>
-                        {userProfile?.samplePhotoUrl && (
-                            <Image src={userProfile.samplePhotoUrl} alt="Craft sample" width={80} height={80} className="rounded-lg object-cover" />
+                        {userProfile?.profileImage && (
+                            <Image src={userProfile.profileImage} alt="Craft sample" width={80} height={80} className="rounded-lg object-cover" />
                         )}
                     </div>
                 </CardHeader>

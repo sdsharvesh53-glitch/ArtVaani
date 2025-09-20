@@ -68,6 +68,8 @@ export function SignupForm() {
         role: 'buyer',
         profileComplete: false,
         verified: false,
+        cart: [],
+        purchasedOrders: [],
         createdAt: new Date(),
       });
       return true; // Indicates new user

@@ -4,7 +4,7 @@
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -53,12 +53,12 @@ export default function ProfilePage() {
       <Card className="mx-auto max-w-2xl shadow-lg">
         <CardHeader className="items-center space-y-4 text-center">
           <Avatar className="h-24 w-24 text-3xl">
-            <AvatarImage src={user.photoURL ?? undefined} alt={userProfile?.name} />
+            <AvatarImage src={userProfile?.profileImage ?? user.photoURL ?? undefined} alt={userProfile?.name} />
             <AvatarFallback>{getInitials(userProfile?.name)}</AvatarFallback>
           </Avatar>
           <div>
             <CardTitle className="font-headline text-4xl text-primary">{userProfile?.name || 'User'}</CardTitle>
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <div className="mt-2 flex items-center justify-center gap-2">
               <Badge variant={userProfile?.role === 'artisan' ? 'default' : 'secondary'} className="capitalize">{userProfile?.role}</Badge>
               {userProfile?.verified && <Badge variant="secondary" className="border-green-500 text-green-700">Verified</Badge>}
             </div>
