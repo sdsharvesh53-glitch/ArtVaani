@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
@@ -15,17 +15,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ChevronDown, ShoppingCart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProductFilters } from '@/components/products/product-filters';
 
 export interface Product {
   id: string;
@@ -39,17 +33,25 @@ export interface Product {
     name: string;
     city: string;
   };
-  createdAt: any;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOption, setSortOption] = useState('newest');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
   const { addToCart } = useCart();
   const { toast } = useToast();
 
   useEffect(() => {
-    const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'products'));
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
@@ -57,7 +59,7 @@ export default function ProductsPage() {
         querySnapshot.forEach((doc) => {
           productsData.push({ id: doc.id, ...doc.data() } as Product);
         });
-        setProducts(productsData);
+        setAllProducts(productsData);
         setLoading(false);
       },
       (error) => {
@@ -74,6 +76,44 @@ export default function ProductsPage() {
     return () => unsubscribe();
   }, [toast]);
 
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    allProducts.forEach(product => {
+        product.aiTags.forEach(tag => tags.add(tag));
+    });
+    return Array.from(tags);
+  }, [allProducts]);
+
+  const filteredProducts = useMemo(() => {
+    return allProducts
+      .filter(product => {
+        // Search query filter
+        const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        // Price range filter
+        const matchesPrice = product.aiPrice >= priceRange[0] && product.aiPrice <= priceRange[1];
+
+        // Tag filter
+        const matchesTags = selectedTags.length === 0 || selectedTags.every(tag => product.aiTags.includes(tag));
+
+        return matchesSearch && matchesPrice && matchesTags;
+      })
+      .sort((a, b) => {
+        switch (sortOption) {
+          case 'newest':
+            return b.createdAt.seconds - a.createdAt.seconds;
+          case 'oldest':
+            return a.createdAt.seconds - b.createdAt.seconds;
+          case 'price-asc':
+            return a.aiPrice - b.aiPrice;
+          case 'price-desc':
+            return b.aiPrice - a.aiPrice;
+          default:
+            return 0;
+        }
+      });
+  }, [allProducts, searchQuery, sortOption, priceRange, selectedTags]);
+
   const handleAddToCart = (product: Product) => {
     addToCart({
       id: product.id,
@@ -89,6 +129,13 @@ export default function ProductsPage() {
     });
   };
 
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSortOption('newest');
+    setPriceRange([0, 10000]);
+    setSelectedTags([]);
+  };
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="text-center">
@@ -100,45 +147,21 @@ export default function ProductsPage() {
         </p>
       </div>
 
-      <div className="my-8 flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="relative w-full md:w-1/3">
-          <Input placeholder="Search for crafts..." className="rounded-full pl-10" />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="rounded-full">
-                Sort by <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Featured</DropdownMenuItem>
-              <DropdownMenuItem>Newest</DropdownMenuItem>
-              <DropdownMenuItem>Price: Low to High</DropdownMenuItem>
-              <DropdownMenuItem>Price: High to Low</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+      <ProductFilters 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        sortOption={sortOption}
+        setSortOption={setSortOption}
+        priceRange={priceRange}
+        setPriceRange={setPriceRange}
+        allTags={allTags}
+        selectedTags={selectedTags}
+        setSelectedTags={setSelectedTags}
+        clearFilters={clearFilters}
+      />
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Card key={i} className="flex flex-col overflow-hidden rounded-2xl shadow-md">
               <CardHeader className="p-0">
@@ -156,8 +179,8 @@ export default function ProductsPage() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
+        <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredProducts.map((product) => (
             <Card
               key={product.id}
               className="flex flex-col overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 hover:shadow-xl"
@@ -185,12 +208,19 @@ export default function ProductsPage() {
                   <Link href={`/products/${product.id}`}>View</Link>
                 </Button>
                 <Button onClick={() => handleAddToCart(product)} className="w-full rounded-full">
-                  <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
+                  <ShoppingCart className="mr-2 h-4 w-4" /> Add
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
+      )}
+      { !loading && filteredProducts.length === 0 && (
+         <div className="mt-16 text-center text-foreground/60">
+            <h3 className="text-2xl font-semibold">No Products Found</h3>
+            <p className="mt-2">Try adjusting your filters to find what you're looking for.</p>
+            <Button onClick={clearFilters} className="mt-4 rounded-full">Clear Filters</Button>
+         </div>
       )}
     </div>
   );
