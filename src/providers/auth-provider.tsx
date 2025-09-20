@@ -10,7 +10,6 @@ import { auth, db } from '@/lib/firebase';
 import { AuthContext } from '@/contexts/auth-context';
 import { CartItem } from '@/contexts/cart-context';
 
-// Expanded user profile type
 export interface UserProfile {
   uid: string;
   email: string | null;
@@ -18,14 +17,19 @@ export interface UserProfile {
   city?: string;
   phone?: string;
   role: 'buyer' | 'artisan';
-  verified?: boolean;
   profileComplete: boolean;
+  
+  // Artisan-specific fields
   craft?: string;
   experience?: number;
-  about?: string;
-  profileImage?: string;
+  bio?: string;
+  sampleImages?: string[];
+  verificationStatus?: 'pending' | 'verified' | 'rejected' | 'unverified';
+
+  // E-commerce fields
   cart?: CartItem[];
   purchasedOrders?: string[]; // Array of purchaseIds
+  
   createdAt: any; // Firestore timestamp
 }
 
@@ -53,12 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(firebaseUser);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         
-        // Use onSnapshot for real-time profile updates
         const unsubscribeSnapshot = onSnapshot(userDocRef, (doc) => {
           if (doc.exists()) {
             handleUserProfile(doc.data() as UserProfile);
           } else {
-             // This case is handled in signup-form, but as a fallback:
             handleUserProfile(null);
           }
           setLoading(false);

@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, Sparkles, Upload, Mic, Trash2 } from 'lucide-react';
+import { Loader2, Sparkles, Upload, ShieldAlert } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -18,6 +18,7 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 
 export default function ProductGeneratorPage() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [productImage, setProductImage] = useState<File | null>(null);
@@ -43,6 +44,19 @@ export default function ProductGeneratorPage() {
   
   const router = useRouter();
   const { toast } = useToast();
+
+  const isVerifiedArtisan = userProfile?.role === 'artisan' && userProfile?.verificationStatus === 'verified';
+
+  useEffect(() => {
+      if (!authLoading && !isVerifiedArtisan) {
+          toast({
+              title: "Verification Required",
+              description: "You must be a verified artisan to access this page.",
+              variant: "destructive",
+          });
+          router.push('/dashboard');
+      }
+  }, [authLoading, isVerifiedArtisan, router, toast])
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -106,16 +120,15 @@ export default function ProductGeneratorPage() {
         // 2. Save product to Firestore
         await addDoc(collection(db, "products"), {
             artisanId: user.uid,
-            images: [imageUrl], // Save as an array
+            images: [imageUrl],
             title: generatedListing.productTitle,
             descriptionInput: description,
             aiStory: generatedListing.productStory,
             aiPrice: generatedListing.suggestedPrice,
             aiTags: generatedListing.hashtags,
-            status: "published", // Or "draft" if you want a review step
+            status: "published",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-             // Add seller details from user profile
             sellerDetails: {
               name: userProfile?.name,
               city: userProfile?.city,
@@ -137,6 +150,15 @@ export default function ProductGeneratorPage() {
         setIsSaving(false);
     }
   };
+
+  if (authLoading || !isVerifiedArtisan) {
+      return (
+          <div className="container mx-auto px-4 py-12 text-center">
+              <Loader2 className="animate-spin mx-auto"/>
+              <p>Verifying access...</p>
+          </div>
+      )
+  }
 
 
   return (

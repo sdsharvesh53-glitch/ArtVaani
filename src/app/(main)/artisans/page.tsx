@@ -36,8 +36,8 @@ import { useToast } from '@/hooks/use-toast';
 const artisanFormSchema = z.object({
   craftName: z.string().min(2, 'Craft name is required'),
   experience: z.coerce.number().min(0, 'Experience must be a positive number'),
-  about: z.string().min(20, 'Please tell us a bit more about your craft.'),
-  samplePhoto: z.instanceof(File).refine(file => file.size > 0, 'A sample photo is required.'),
+  bio: z.string().min(20, 'Please tell us a bit more about your craft.'),
+  sampleImage: z.instanceof(File).refine(file => file.size > 0, 'A sample photo is required.'),
 });
 
 export default function ForArtisansPage() {
@@ -51,7 +51,7 @@ export default function ForArtisansPage() {
     defaultValues: {
       craftName: '',
       experience: 0,
-      about: '',
+      bio: '',
     },
   });
 
@@ -63,9 +63,9 @@ export default function ForArtisansPage() {
       // 1. Upload sample photo to Firebase Storage
       const photoRef = ref(
         storage,
-        `artisan-profiles/${user.uid}/${values.samplePhoto.name}`
+        `artisan-applications/${user.uid}/${values.sampleImage.name}`
       );
-      const snapshot = await uploadBytes(photoRef, values.samplePhoto);
+      const snapshot = await uploadBytes(photoRef, values.sampleImage);
       const photoUrl = await getDownloadURL(snapshot.ref);
 
       // 2. Update user document in Firestore
@@ -74,19 +74,18 @@ export default function ForArtisansPage() {
         role: 'artisan',
         craft: values.craftName,
         experience: values.experience,
-        about: values.about,
-        profileImage: photoUrl,
+        bio: values.bio,
+        sampleImages: [photoUrl],
+        verificationStatus: 'pending',
       });
       
       toast({
         title: 'Application Submitted!',
-        description: 'Your artisan profile has been updated. Redirecting you to your dashboard.',
+        description: 'Your artisan application is under review. We will notify you once it is approved.',
       });
 
-      // Force re-fetch of user profile in AuthProvider
-      // A full page reload is a simple way to ensure this.
-      router.push('/dashboard');
-      window.location.reload();
+      // Redirect to profile to see the new status
+      router.push('/profile');
 
     } catch (error) {
       console.error('Error submitting artisan application:', error);
@@ -115,13 +114,24 @@ export default function ForArtisansPage() {
   }
 
   if (isArtisan) {
-    return (
-      <div className="container mx-auto px-4 py-12 text-center">
-        <h1 className="font-headline text-5xl text-primary">Welcome, Artisan!</h1>
-        <p className="mt-4 text-lg text-foreground/80">You are already part of our artisan community.</p>
-        <Button onClick={() => router.push('/dashboard')} className="mt-6 rounded-full">Go to Dashboard</Button>
-      </div>
-    );
+    if (userProfile?.verificationStatus === 'verified') {
+        return (
+          <div className="container mx-auto px-4 py-12 text-center">
+            <h1 className="font-headline text-5xl text-primary">Welcome, Artisan!</h1>
+            <p className="mt-4 text-lg text-foreground/80">You are already a verified artisan.</p>
+            <Button onClick={() => router.push('/dashboard')} className="mt-6 rounded-full">Go to Dashboard</Button>
+          </div>
+        );
+    }
+     if (userProfile?.verificationStatus === 'pending') {
+        return (
+          <div className="container mx-auto px-4 py-12 text-center">
+            <h1 className="font-headline text-5xl text-primary">Application Pending</h1>
+            <p className="mt-4 text-lg text-foreground/80">Your application is currently under review. We'll notify you soon!</p>
+            <Button onClick={() => router.push('/profile')} className="mt-6 rounded-full">View My Profile</Button>
+          </div>
+        );
+    }
   }
 
   return (
@@ -187,10 +197,10 @@ export default function ForArtisansPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="about"
+                  name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>About Your Craft</FormLabel>
+                      <FormLabel>Your Bio</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Describe the story, technique, and uniqueness of your art..."
@@ -204,10 +214,10 @@ export default function ForArtisansPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="samplePhoto"
+                  name="sampleImage"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Profile Photo</FormLabel>
+                      <FormLabel>Sample Craft Image</FormLabel>
                       <FormControl>
                          <Input 
                            type="file" 
@@ -215,6 +225,9 @@ export default function ForArtisansPage() {
                            onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
                          />
                       </FormControl>
+                       <FormDescription>
+                        Upload one clear photo of your craft.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

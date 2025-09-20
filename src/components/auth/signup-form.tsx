@@ -12,7 +12,7 @@ import {
   isSignInWithEmailLink,
   sendSignInLinkToEmail,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Mail, Phone, Loader2 } from 'lucide-react';
 
@@ -59,7 +59,6 @@ export function SignupForm() {
     const userDocRef = doc(db, 'users', uid);
     const userDoc = await getDoc(userDocRef);
 
-    // Create profile only if it doesn't exist
     if (!userDoc.exists()) {
       await setDoc(userDocRef, {
         uid,
@@ -67,10 +66,8 @@ export function SignupForm() {
         name: name || '',
         role: 'buyer',
         profileComplete: false,
-        verified: false,
-        cart: [],
-        purchasedOrders: [],
-        createdAt: new Date(),
+        verificationStatus: 'unverified',
+        createdAt: serverTimestamp(),
       });
       return true; // Indicates new user
     }
@@ -141,8 +138,6 @@ export function SignupForm() {
     }
   }
 
-  // A full implementation for phone OTP is complex and would require a separate page/component flow
-  // This is a placeholder to show the button as disabled.
   const handlePhoneSignIn = async () => {
     toast({
         title: "Coming Soon!",
