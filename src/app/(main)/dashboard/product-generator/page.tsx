@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, Sparkles, Upload, ShieldAlert } from 'lucide-react';
+import { Loader2, Sparkles, Upload, ShieldAlert, Tag, Pencil } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -42,6 +42,9 @@ export default function ProductGeneratorPage() {
   const [generatedListing, setGeneratedListing] =
     useState<GenerateProductListingOutput | null>(null);
   
+  const [editableListing, setEditableListing] = 
+    useState<GenerateProductListingOutput | null>(null);
+
   const router = useRouter();
   const { toast } = useToast();
 
@@ -56,7 +59,13 @@ export default function ProductGeneratorPage() {
           });
           router.push('/dashboard');
       }
-  }, [authLoading, isVerifiedArtisan, router, toast])
+  }, [authLoading, isVerifiedArtisan, router, toast]);
+
+  useEffect(() => {
+    if (generatedListing) {
+      setEditableListing(generatedListing);
+    }
+  }, [generatedListing]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -106,8 +115,15 @@ export default function ProductGeneratorPage() {
     }
   };
 
+  const handleListingChange = (field: keyof GenerateProductListingOutput, value: any) => {
+    if (editableListing) {
+      setEditableListing({ ...editableListing, [field]: value });
+    }
+  };
+
+
   const handleSave = async () => {
-    if (!generatedListing || !user || !productImage) {
+    if (!editableListing || !user || !productImage) {
         return;
     }
     setIsSaving(true);
@@ -121,11 +137,13 @@ export default function ProductGeneratorPage() {
         await addDoc(collection(db, "products"), {
             artisanId: user.uid,
             images: [imageUrl],
-            title: generatedListing.productTitle,
+            title: editableListing.productTitle,
             descriptionInput: description,
-            aiStory: generatedListing.productStory,
-            aiPrice: generatedListing.suggestedPrice,
-            aiTags: generatedListing.hashtags,
+            aiStory: editableListing.productStory,
+            aiPrice: Number(editableListing.suggestedPrice) || 0,
+            aiTags: Array.isArray(editableListing.hashtags) 
+              ? editableListing.hashtags 
+              : (editableListing.hashtags as unknown as string).split(',').map(t => t.trim()),
             status: "published",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -223,13 +241,29 @@ export default function ProductGeneratorPage() {
              </Card>
         )}
         
-        {generatedListing && (
+        {editableListing && (
             <Card className="mt-8 shadow-lg">
                 <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle className="text-3xl text-primary">{generatedListing.productTitle}</CardTitle>
-                             <p className="text-2xl font-semibold text-accent">₹{generatedListing.suggestedPrice.toFixed(2)}</p>
+                    <div className="flex justify-between items-start gap-4">
+                        <div className="flex-grow space-y-2">
+                          <Label htmlFor='edit-title'>Product Title</Label>
+                          <Input 
+                            id="edit-title"
+                            value={editableListing.productTitle} 
+                            onChange={(e) => handleListingChange('productTitle', e.target.value)} 
+                            className="text-3xl text-primary font-headline p-2 h-auto"
+                          />
+                          <Label htmlFor='edit-price'>Price (INR)</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
+                            <Input
+                              id="edit-price"
+                              type="number"
+                              value={editableListing.suggestedPrice} 
+                              onChange={(e) => handleListingChange('suggestedPrice', parseFloat(e.target.value))} 
+                              className="pl-7 text-2xl font-semibold text-accent"
+                            />
+                          </div>
                         </div>
                         {productImageUrl && (
                             <Image src={productImageUrl} alt="Craft sample" width={100} height={100} className="rounded-lg object-cover" />
@@ -237,11 +271,26 @@ export default function ProductGeneratorPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     <p className="text-foreground/90">{generatedListing.productStory}</p>
-                     <div className="flex flex-wrap gap-2">
-                        {generatedListing.hashtags.map(tag => (
-                            <Badge key={tag} variant="secondary">#{tag}</Badge>
-                        ))}
+                    <div className="space-y-2">
+                      <Label htmlFor='edit-story'>Product Story</Label>
+                      <Textarea 
+                        id="edit-story"
+                        value={editableListing.productStory} 
+                        onChange={(e) => handleListingChange('productStory', e.target.value)} 
+                        className="min-h-[150px] text-foreground/90"
+                      />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor='edit-tags'>Hashtags (comma-separated)</Label>
+                        <div className="relative">
+                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              id="edit-tags"
+                              value={Array.isArray(editableListing.hashtags) ? editableListing.hashtags.join(', ') : editableListing.hashtags}
+                              onChange={(e) => handleListingChange('hashtags', e.target.value.split(',').map(t => t.trim()))}
+                              className="pl-9"
+                            />
+                        </div>
                      </div>
                 </CardContent>
                 <CardFooter>
@@ -256,3 +305,5 @@ export default function ProductGeneratorPage() {
     </div>
   );
 }
+
+    
