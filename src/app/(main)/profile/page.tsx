@@ -4,12 +4,13 @@
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Phone, MapPin, Award } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Award, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 export default function ProfilePage() {
   const { user, userProfile, loading } = useAuth();
@@ -62,6 +63,8 @@ export default function ProfilePage() {
     }
   };
 
+  const isPendingArtisan = userProfile?.role === 'artisan' && userProfile?.verificationStatus === 'pending';
+
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -113,6 +116,17 @@ export default function ProfilePage() {
              </>
           )}
         </CardContent>
+         {isPendingArtisan && (
+            <CardFooter className="flex-col gap-4 pt-4">
+               <p className="text-sm text-center text-muted-foreground">
+                Your application is pending. Please complete identity verification to start selling.
+              </p>
+              <Button onClick={() => router.push('/profile/verify-identity')} className="w-full rounded-full">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Verify Identity
+              </Button>
+            </CardFooter>
+        )}
       </Card>
     </div>
   );
