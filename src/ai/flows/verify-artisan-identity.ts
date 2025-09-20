@@ -48,14 +48,13 @@ const verifyArtisanIdentityPrompt = ai.definePrompt({
   output: {schema: VerifyArtisanIdentityOutputSchema},
   prompt: `You are an identity verification assistant for an artisan marketplace.
 
-Your task is to verify an artisan's location. You will receive a live photo, their current GPS coordinates, and the city they have declared in their profile.
+Your task is to verify an artisan's location. You will receive their current GPS coordinates and the city they have declared in their profile.
 
-Your primary goal is to determine if the GPS location is reasonably within the declared city. The photo is for record-keeping and does not need to be analyzed for location matching.
+Your primary goal is to determine if the GPS location is reasonably within the declared city.
 
 - If the GPS coordinates are consistent with the declared city, set the isVerified field to true and provide a confirmation message in verificationResult.
 - If the GPS coordinates are not consistent with the declared city, set isVerified to false and explain the mismatch in verificationResult.
 
-Photo: {{media url=photoDataUri}}
 GPS Location: {{{gpsLocation}}}
 Declared City: {{{declaredCity}}}`,
 });
