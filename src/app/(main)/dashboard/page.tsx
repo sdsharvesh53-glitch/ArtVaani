@@ -36,7 +36,7 @@ export default function DashboardPage() {
       <h1 className="mb-8 text-center font-headline text-5xl font-bold text-primary">
         Artisan Dashboard
       </h1>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
         <Card className="transform transition-transform hover:scale-105 hover:shadow-xl">
           <Link href="/dashboard/product-generator">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -52,25 +52,11 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="transform transition-transform hover:scale-105 hover:shadow-xl">
-          <Link href="/dashboard/story-assistant">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-headline text-2xl text-primary">AI Storytelling</CardTitle>
-              <BookOpen className="h-6 w-6 text-accent" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-foreground/80">
-                Turn your spoken stories into compelling narratives for your crafts.
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-
-        <Card className="transform transition-transform hover:scale-105 hover:shadow-xl">
           <Link href="/dashboard/identity-verification">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="font-headline text-2xl text-primary">Identity Verification</CardTitle>
               <ShieldCheck className="h-6 w-6 text-accent" />
-            </Header>
+            </CardHeader>
             <CardContent>
               <p className="text-sm text-foreground/80">
                 Verify your identity to earn a trusted badge on your profile.

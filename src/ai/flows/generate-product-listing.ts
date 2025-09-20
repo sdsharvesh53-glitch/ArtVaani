@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -12,16 +13,16 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateProductListingInputSchema = z.object({
-  craftName: z.string().describe('The name of the craft.'),
-  artisanStory: z.string().describe("The artisan's story about the craft."),
-  craftImage: z.string().describe("A data URI of the craft's image."),
+  productDescription: z.string().describe("A brief description of the product."),
+  productImage: z.string().describe("A data URI of the product's image."),
 });
 export type GenerateProductListingInput = z.infer<typeof GenerateProductListingInputSchema>;
 
 const GenerateProductListingOutputSchema = z.object({
   productTitle: z.string().describe('A catchy and descriptive title for the product.'),
-  productDescription: z.string().describe('A detailed and appealing product description.'),
-  suggestedPrice: z.number().describe('A suggested price for the product.'),
+  productStory: z.string().describe('A detailed and appealing story-based product description.'),
+  suggestedPrice: z.number().describe('A suggested price for the product in INR.'),
+  hashtags: z.array(z.string()).describe('An array of 3-5 relevant hashtags for social media.'),
 });
 export type GenerateProductListingOutput = z.infer<typeof GenerateProductListingOutputSchema>;
 
@@ -35,15 +36,15 @@ const productListingPrompt = ai.definePrompt({
   name: 'productListingPrompt',
   input: {schema: GenerateProductListingInputSchema},
   output: {schema: GenerateProductListingOutputSchema},
-  prompt: `You are an expert e-commerce marketer specializing in handmade crafts.
+  prompt: `You are an expert e-commerce marketer specializing in handmade Indian crafts.
   
-  Based on the craft name, artisan's story, and the product image, generate a compelling product listing.
+  Based on the user's description and the product image, generate a compelling product listing.
+  The currency should be in Indian Rupees (₹).
+
+  Product Description: {{{productDescription}}}
+  Image: {{media url=productImage}}
   
-  Craft Name: {{{craftName}}}
-  Artisan Story: {{{artisanStory}}}
-  Image: {{media url=craftImage}}
-  
-  Generate a catchy title, a detailed description, and suggest a fair price for the product.`,
+  Generate a catchy title, a detailed story-based description, a fair price in INR, and 3-5 relevant hashtags.`,
 });
 
 const generateProductListingFlow = ai.defineFlow(
