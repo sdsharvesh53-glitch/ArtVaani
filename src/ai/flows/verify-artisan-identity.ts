@@ -29,7 +29,7 @@ const VerifyArtisanIdentityOutputSchema = z.object({
   isVerified: z
     .boolean()
     .describe(
-      'Whether the artisan is verified based on the photo background and GPS location matching the declared city.'
+      'Whether the artisan is verified based on the GPS location matching the declared city.'
     ),
   verificationResult: z.string().describe('The AI verification result.'),
 });
@@ -46,13 +46,14 @@ const verifyArtisanIdentityPrompt = ai.definePrompt({
   name: 'verifyArtisanIdentityPrompt',
   input: {schema: VerifyArtisanIdentityInputSchema},
   output: {schema: VerifyArtisanIdentityOutputSchema},
-  prompt: `You are an identity verification expert specializing in verifying artisans.
+  prompt: `You are an identity verification assistant for an artisan marketplace.
 
-You will receive a photo captured live from the artisan's device, their GPS location, and the city they declared in their profile.
+Your task is to verify an artisan's location. You will receive a live photo, their current GPS coordinates, and the city they have declared in their profile.
 
-Your task is to determine if the photo background matches the declared city and if the GPS location is within a reasonable range of the declared city.
+Your primary goal is to determine if the GPS location is reasonably within the declared city. The photo is for record-keeping and does not need to be analyzed for location matching.
 
-Based on your analysis, set the isVerified output field to true if both conditions are met, otherwise set it to false. Provide a detailed explanation of your verification result in the verificationResult output field.
+- If the GPS coordinates are consistent with the declared city, set the isVerified field to true and provide a confirmation message in verificationResult.
+- If the GPS coordinates are not consistent with the declared city, set isVerified to false and explain the mismatch in verificationResult.
 
 Photo: {{media url=photoDataUri}}
 GPS Location: {{{gpsLocation}}}
