@@ -38,7 +38,14 @@ const artisanFormSchema = z.object({
   craftName: z.string().min(2, 'Craft name is required'),
   experience: z.coerce.number().min(0, 'Experience must be a positive number'),
   bio: z.string().min(20, 'Please tell us a bit more about your craft.'),
-  sampleImage: z.instanceof(File).refine(file => file.size > 0, 'A sample photo is required.'),
+  sampleImage: z
+    .any()
+    .refine((files) => files?.length == 1, 'A sample photo is required.')
+    .refine((files) => files?.[0]?.size <= 5000000, `Max file size is 5MB.`)
+    .refine(
+      (files) => ['image/jpeg', 'image/png', 'image/webp'].includes(files?.[0]?.type),
+      '.jpg, .png, and .webp files are accepted.'
+    ),
 });
 
 export default function ForArtisansPage() {
@@ -59,14 +66,16 @@ export default function ForArtisansPage() {
   async function onSubmit(values: z.infer<typeof artisanFormSchema>) {
     if (!user) return;
     setIsSubmitting(true);
+    
+    const imageFile = values.sampleImage[0];
 
     try {
       // 1. Upload sample photo to Firebase Storage
       const photoRef = ref(
         storage,
-        `artisan-applications/${user.uid}/${values.sampleImage.name}`
+        `artisan-applications/${user.uid}/${imageFile.name}`
       );
-      const snapshot = await uploadBytes(photoRef, values.sampleImage);
+      const snapshot = await uploadBytes(photoRef, imageFile);
       const photoUrl = await getDownloadURL(snapshot.ref);
 
       // 2. Update user document in Firestore
@@ -222,12 +231,12 @@ export default function ForArtisansPage() {
                       <FormControl>
                          <Input 
                            type="file" 
-                           accept="image/*"
-                           onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                           accept="image/png, image/jpeg, image/webp"
+                           {...form.register('sampleImage')}
                          />
                       </FormControl>
                        <FormDescription>
-                        Upload one clear photo of your craft.
+                        Upload one clear photo of your craft (max 5MB).
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
