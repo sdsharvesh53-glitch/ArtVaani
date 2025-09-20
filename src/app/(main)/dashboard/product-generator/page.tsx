@@ -203,67 +203,76 @@ export default function ProductGeneratorPage() {
 
   const handleSave = async () => {
     if (!editableListing || !user || !productImage) {
-        toast({ title: "Missing Information", description: "Please ensure all fields are filled out.", variant: "destructive"});
-        return;
+      toast({
+        title: 'Missing Information',
+        description: 'Please ensure an image is selected and content is generated.',
+        variant: 'destructive',
+      });
+      return;
     }
     setIsSaving(true);
     try {
-        // 1. Fetch the latest user profile data to ensure rules are met
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (!userDocSnap.exists()) {
-          throw new Error("User profile not found.");
-        }
-        const freshUserProfile = userDocSnap.data() as UserProfile;
+      // 1. Fetch the latest user profile data to ensure rules are met
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (!userDocSnap.exists()) {
+        throw new Error('User profile not found.');
+      }
+      const freshUserProfile = userDocSnap.data() as UserProfile;
+       if (freshUserProfile.role !== 'artisan' || freshUserProfile.verificationStatus !== 'verified') {
+        throw new Error('You must be a verified artisan to publish products.');
+      }
 
-        // 2. Upload image to Firebase Storage
-        const imageRef = ref(storage, `products/${user.uid}/${Date.now()}_${productImage.name}`);
-        const snapshot = await uploadBytes(imageRef, productImage);
-        const imageUrl = await getDownloadURL(snapshot.ref);
+      // 2. Upload image to Firebase Storage
+      const imageRef = ref(storage, `products/${user.uid}/${Date.now()}_${productImage.name}`);
+      const snapshot = await uploadBytes(imageRef, productImage);
+      const imageUrl = await getDownloadURL(snapshot.ref);
 
-        // 3. Prepare data for Firestore
-        let tags: string[] = [];
-        if (Array.isArray(editableListing.hashtags)) {
-          tags = editableListing.hashtags;
-        } else if (typeof editableListing.hashtags === 'string') {
-          tags = editableListing.hashtags.split(',').map(t => t.trim()).filter(t => t);
-        }
+      // 3. Prepare data for Firestore
+      let tags: string[] = [];
+      if (Array.isArray(editableListing.hashtags)) {
+        tags = editableListing.hashtags.filter(t => typeof t === 'string' && t.trim() !== '');
+      } else if (typeof editableListing.hashtags === 'string') {
+        tags = editableListing.hashtags.split(',').map(t => t.trim()).filter(t => t);
+      }
 
-        const productData = {
-            artisanId: user.uid,
-            title: editableListing.productTitle,
-            images: [imageUrl],
-            descriptionInput: textDescription, // or transcribed audio
-            aiStory: editableListing.productStory,
-            aiPrice: Number(editableListing.suggestedPrice) || 0,
-            aiTags: tags,
-            status: "published",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            sellerDetails: {
-              name: freshUserProfile.name,
-              city: freshUserProfile.city,
-            },
-        };
+      const productData = {
+        artisanId: user.uid,
+        title: editableListing.productTitle,
+        images: [imageUrl],
+        descriptionInput: textDescription,
+        aiStory: editableListing.productStory,
+        aiPrice: Number(editableListing.suggestedPrice) || 0,
+        aiTags: tags,
+        status: 'published',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        sellerDetails: {
+          name: freshUserProfile.name || 'Artisan',
+          city: freshUserProfile.city || 'Unknown',
+        },
+      };
 
-        // 4. Save product to Firestore
-        await addDoc(collection(db, "products"), productData);
-        
-        toast({
-            title: "Product Published!",
-            description: "Your new product is now live on the marketplace.",
-        });
-        router.push("/products");
+      // 4. Save product to Firestore
+      await addDoc(collection(db, 'products'), productData);
 
+      toast({
+        title: '✅ Product Published!',
+        description: 'Your new product is now live on the marketplace.',
+      });
+      router.push('/products');
     } catch (error) {
-        console.error("Error saving product:", error);
-        toast({
-            title: "Publish Failed",
-            description: "Could not save the product. This may be a permission issue. Please try again.",
-            variant: "destructive"
-        });
+      console.error('Error saving product:', error);
+      toast({
+        title: '❌ Publish Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Could not save the product. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
@@ -417,7 +426,7 @@ export default function ProductGeneratorPage() {
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="animate-spin mr-2" /> : null}
+                        {isSaving && <Loader2 className="animate-spin mr-2" />}
                         {isSaving ? 'Publishing...' : 'Publish to Marketplace'}
                     </Button>
                 </CardFooter>
@@ -428,5 +437,3 @@ export default function ProductGeneratorPage() {
     </div>
   );
 }
-
-    
