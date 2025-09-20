@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview A cultural craft insights AI agent.
- *
+ * 
  * - exploreCulturalCraftInsights - A function that explores cultural craft insights.
  * - ExploreCulturalCraftInsightsInput - The input type for the exploreCulturalCraftInsights function.
  * - ExploreCulturalCraftInsightsOutput - The return type for the exploreCulturalCraftInsights function.
