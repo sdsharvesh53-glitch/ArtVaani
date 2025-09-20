@@ -192,7 +192,7 @@ export default function ProductGeneratorPage() {
   };
 
 
-  const handleListingChange = (field: keyof GenerateProductListingOutput, value: any) => {
+  const handleListingChange = (field: keyof GenerateProductListingOutput, value: string | number | string[]) => {
     if (editableListing) {
       setEditableListing({ ...editableListing, [field]: value });
     }
@@ -201,6 +201,7 @@ export default function ProductGeneratorPage() {
 
   const handleSave = async () => {
     if (!editableListing || !user || !productImage) {
+        toast({ title: "Missing Information", description: "Please ensure all fields are filled out.", variant: "destructive"});
         return;
     }
     setIsSaving(true);
@@ -210,17 +211,19 @@ export default function ProductGeneratorPage() {
         const snapshot = await uploadBytes(imageRef, productImage);
         const imageUrl = await getDownloadURL(snapshot.ref);
 
-        // 2. Save product to Firestore
-        await addDoc(collection(db, "products"), {
+        // 2. Prepare data for Firestore
+        const tags = Array.isArray(editableListing.hashtags) 
+            ? editableListing.hashtags 
+            : (editableListing.hashtags as unknown as string).split(',').map(t => t.trim());
+
+        const productData = {
             artisanId: user.uid,
             title: editableListing.productTitle,
             images: [imageUrl],
-            descriptionInput: textDescription,
+            descriptionInput: textDescription, // or transcribed audio
             aiStory: editableListing.productStory,
             aiPrice: Number(editableListing.suggestedPrice) || 0,
-            aiTags: Array.isArray(editableListing.hashtags) 
-              ? editableListing.hashtags 
-              : (editableListing.hashtags as unknown as string).split(',').map(t => t.trim()),
+            aiTags: tags,
             status: "published",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -228,16 +231,21 @@ export default function ProductGeneratorPage() {
               name: userProfile?.name,
               city: userProfile?.city,
             },
-        });
+        };
+
+        // 3. Save product to Firestore
+        await addDoc(collection(db, "products"), productData);
+        
         toast({
-            title: "Product Saved!",
-            description: "Your new product listing is now live.",
+            title: "Product Published!",
+            description: "Your new product is now live on the marketplace.",
         });
         router.push("/products");
+
     } catch (error) {
         console.error("Error saving product:", error);
         toast({
-            title: "Save Failed",
+            title: "Publish Failed",
             description: "Could not save the product. Please try again.",
             variant: "destructive"
         });
@@ -396,7 +404,8 @@ export default function ProductGeneratorPage() {
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="animate-spin" /> : 'Publish to Marketplace'}
+                        {isSaving ? <><Loader2 className="animate-spin mr-2" /> : null}
+                        {isSaving ? 'Publishing...' : 'Publish to Marketplace'}
                     </Button>
                 </CardFooter>
             </Card>
@@ -406,5 +415,3 @@ export default function ProductGeneratorPage() {
     </div>
   );
 }
-
-    
