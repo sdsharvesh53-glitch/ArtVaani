@@ -384,7 +384,7 @@ export default function ProductGeneratorPage() {
                       <Label htmlFor='edit-story'>Product Story</Label>
                       <Textarea 
                         id="edit-story"
-                        value={editableListing.productStory} _
+                        value={editableListing.productStory}
                         onChange={(e) => handleListingChange('productStory', e.target.value)} 
                         className="min-h-[150px] text-foreground/90"
                       />
@@ -415,5 +415,7 @@ export default function ProductGeneratorPage() {
     </div>
   );
 }
+
+    
 
     
