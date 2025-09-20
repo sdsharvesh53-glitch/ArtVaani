@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Loader2, Sparkles, Tag, Pencil, Mic, Square, AudioLines, Trash2, PencilLine } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import { db, storage } from '@/lib/firebase';
@@ -30,6 +30,7 @@ import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UserProfile } from '@/providers/auth-provider';
 
 export default function ProductGeneratorPage() {
   const { user, userProfile, loading: authLoading } = useAuth();
@@ -139,6 +140,7 @@ export default function ProductGeneratorPage() {
     
     setIsGenerating(true);
     setGeneratedListing(null);
+    setEditableListing(null);
 
     try {
         let description = textDescription;
@@ -206,15 +208,26 @@ export default function ProductGeneratorPage() {
     }
     setIsSaving(true);
     try {
-        // 1. Upload image to Firebase Storage
+        // 1. Fetch the latest user profile data to ensure rules are met
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+          throw new Error("User profile not found.");
+        }
+        const freshUserProfile = userDocSnap.data() as UserProfile;
+
+        // 2. Upload image to Firebase Storage
         const imageRef = ref(storage, `products/${user.uid}/${Date.now()}_${productImage.name}`);
         const snapshot = await uploadBytes(imageRef, productImage);
         const imageUrl = await getDownloadURL(snapshot.ref);
 
-        // 2. Prepare data for Firestore
-        const tags = Array.isArray(editableListing.hashtags) 
-            ? editableListing.hashtags 
-            : (editableListing.hashtags as unknown as string).split(',').map(t => t.trim()).filter(t => t);
+        // 3. Prepare data for Firestore
+        let tags: string[] = [];
+        if (Array.isArray(editableListing.hashtags)) {
+          tags = editableListing.hashtags;
+        } else if (typeof editableListing.hashtags === 'string') {
+          tags = editableListing.hashtags.split(',').map(t => t.trim()).filter(t => t);
+        }
 
         const productData = {
             artisanId: user.uid,
@@ -228,12 +241,12 @@ export default function ProductGeneratorPage() {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             sellerDetails: {
-              name: userProfile?.name,
-              city: userProfile?.city,
+              name: freshUserProfile.name,
+              city: freshUserProfile.city,
             },
         };
 
-        // 3. Save product to Firestore
+        // 4. Save product to Firestore
         await addDoc(collection(db, "products"), productData);
         
         toast({
@@ -246,7 +259,7 @@ export default function ProductGeneratorPage() {
         console.error("Error saving product:", error);
         toast({
             title: "Publish Failed",
-            description: "Could not save the product. Please try again.",
+            description: "Could not save the product. This may be a permission issue. Please try again.",
             variant: "destructive"
         });
     } finally {
@@ -415,3 +428,5 @@ export default function ProductGeneratorPage() {
     </div>
   );
 }
+
+    
