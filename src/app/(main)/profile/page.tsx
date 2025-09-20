@@ -58,10 +58,10 @@ export default function ProfilePage() {
           </Avatar>
           <div>
             <CardTitle className="font-headline text-4xl text-primary">{userProfile?.name || 'User'}</CardTitle>
-            <CardDescription className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Badge variant={userProfile?.role === 'artisan' ? 'default' : 'secondary'} className="capitalize">{userProfile?.role}</Badge>
               {userProfile?.verified && <Badge variant="secondary" className="border-green-500 text-green-700">Verified</Badge>}
-            </CardDescription>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
