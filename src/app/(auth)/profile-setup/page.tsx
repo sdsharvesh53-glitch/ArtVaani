@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -71,10 +71,10 @@ export default function ProfileSetupPage() {
     setIsLoading(true);
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, {
+      await setDoc(userDocRef, {
         ...values,
         profileComplete: true,
-      });
+      }, { merge: true });
 
       router.push('/');
       toast({
@@ -160,4 +160,3 @@ export default function ProfileSetupPage() {
     </div>
   );
 }
-
