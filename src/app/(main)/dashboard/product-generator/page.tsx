@@ -213,6 +213,7 @@ export default function ProductGeneratorPage() {
         // 2. Save product to Firestore
         await addDoc(collection(db, "products"), {
             artisanId: user.uid,
+            title: editableListing.productTitle,
             images: [imageUrl],
             descriptionInput: textDescription,
             aiStory: editableListing.productStory,

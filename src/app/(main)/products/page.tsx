@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -51,7 +52,7 @@ export default function ProductsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const q = query(collection(db, 'products'));
+    const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
