@@ -9,10 +9,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Loader2, Sparkles, Upload } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -24,7 +23,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -38,14 +36,6 @@ const artisanFormSchema = z.object({
   craftName: z.string().min(2, 'Craft name is required'),
   experience: z.coerce.number().min(0, 'Experience must be a positive number'),
   bio: z.string().min(20, 'Please tell us a bit more about your craft.'),
-  sampleImage: z
-    .any()
-    .refine((files) => files?.length == 1, 'A sample photo is required.')
-    .refine((files) => files?.[0]?.size <= 5000000, `Max file size is 5MB.`)
-    .refine(
-      (files) => ['image/jpeg', 'image/png', 'image/webp'].includes(files?.[0]?.type),
-      '.jpg, .png, and .webp files are accepted.'
-    ),
 });
 
 export default function ForArtisansPage() {
@@ -67,25 +57,15 @@ export default function ForArtisansPage() {
     if (!user) return;
     setIsSubmitting(true);
     
-    const imageFile = values.sampleImage[0];
-
     try {
-      // 1. Upload sample photo to Firebase Storage
-      const photoRef = ref(
-        storage,
-        `artisan-applications/${user.uid}/${imageFile.name}`
-      );
-      const snapshot = await uploadBytes(photoRef, imageFile);
-      const photoUrl = await getDownloadURL(snapshot.ref);
-
-      // 2. Update user document in Firestore
+      // Update user document in Firestore
       const userDocRef = doc(db, 'users', user.uid);
       await updateDoc(userDocRef, {
         role: 'artisan',
         craft: values.craftName,
         experience: values.experience,
         bio: values.bio,
-        sampleImages: [photoUrl],
+        sampleImages: [], // Set empty array as image upload is removed
         verificationStatus: 'pending',
       });
       
@@ -218,26 +198,6 @@ export default function ForArtisansPage() {
                           {...field}
                         />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="sampleImage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sample Craft Image</FormLabel>
-                      <FormControl>
-                         <Input 
-                           type="file" 
-                           accept="image/png, image/jpeg, image/webp"
-                           {...form.register('sampleImage')}
-                         />
-                      </FormControl>
-                       <FormDescription>
-                        Upload one clear photo of your craft (max 5MB).
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
