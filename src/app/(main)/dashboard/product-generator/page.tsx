@@ -384,7 +384,7 @@ export default function ProductGeneratorPage() {
                       <Label htmlFor='edit-story'>Product Story</Label>
                       <Textarea 
                         id="edit-story"
-                        value={editableListing.productStory} 
+                        value={editableListing.productStory} _
                         onChange={(e) => handleListingChange('productStory', e.target.value)} 
                         className="min-h-[150px] text-foreground/90"
                       />
@@ -404,7 +404,7 @@ export default function ProductGeneratorPage() {
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? <><Loader2 className="animate-spin mr-2" /> : null}
+                        {isSaving ? <Loader2 className="animate-spin mr-2" /> : null}
                         {isSaving ? 'Publishing...' : 'Publish to Marketplace'}
                     </Button>
                 </CardFooter>
@@ -415,3 +415,5 @@ export default function ProductGeneratorPage() {
     </div>
   );
 }
+
+    
