@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -6,6 +8,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -16,7 +19,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/hooks/use-cart';
+import { useToast } from '@/hooks/use-toast';
 
 // This would be fetched from Firestore in a real app
 const products = [
@@ -31,6 +36,24 @@ const products = [
 ];
 
 export default function ProductsPage() {
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+
+  const handleAddToCart = (product: typeof products[0]) => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1,
+      hint: product.hint
+    });
+    toast({
+      title: 'Added to cart',
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
+  
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="text-center">
@@ -83,27 +106,34 @@ export default function ProductsPage() {
         {products.map((product) => (
           <Card
             key={product.id}
-            className="overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 hover:shadow-xl"
+            className="flex flex-col overflow-hidden rounded-2xl shadow-md transition-shadow duration-300 hover:shadow-xl"
           >
             <CardHeader className="p-0">
-              <Image
-                src={product.image}
-                alt={product.name}
-                width={400}
-                height={400}
-                className="h-64 w-full object-cover transition-transform duration-300 hover:scale-105"
-                data-ai-hint={product.hint}
-              />
+               <Link href={`/products/${product.id}`}>
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  width={400}
+                  height={400}
+                  className="h-64 w-full object-cover transition-transform duration-300 hover:scale-105"
+                  data-ai-hint={product.hint}
+                />
+              </Link>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="flex-grow p-4">
               <CardTitle className="truncate text-lg">{product.name}</CardTitle>
               <CardDescription className="mt-2 text-base font-semibold text-primary">
                 {product.price}
               </CardDescription>
-              <Button asChild className="mt-4 w-full rounded-full">
-                <Link href={`/products/${product.id}`}>View Details</Link>
-              </Button>
             </CardContent>
+            <CardFooter className="flex gap-2 p-4 pt-0">
+                 <Button asChild className="w-full rounded-full" variant="outline">
+                <Link href={`/products/${product.id}`}>View</Link>
+              </Button>
+              <Button onClick={() => handleAddToCart(product)} className="w-full rounded-full">
+                <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
+              </Button>
+            </CardFooter>
           </Card>
         ))}
       </div>

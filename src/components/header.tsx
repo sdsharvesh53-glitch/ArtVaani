@@ -18,9 +18,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from './ui/skeleton';
+import { useCart } from '@/hooks/use-cart';
+import { Badge } from './ui/badge';
 
 export function Header() {
   const { user, loading, isArtisan } = useAuth();
+  const { cartItems } = useCart();
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -61,7 +64,15 @@ export function Header() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/cart">
+            <Link href="/cart" className="relative">
+              {cartItems.length > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full p-0"
+                >
+                  {cartItems.length}
+                </Badge>
+              )}
               <ShoppingCart className="h-5 w-5" />
               <span className="sr-only">Shopping Cart</span>
             </Link>
